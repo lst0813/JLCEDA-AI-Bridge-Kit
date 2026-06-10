@@ -1,0 +1,8 @@
+# Local temporary files
+*.log
+*.tmp
+*.bak
+
+# Keep bundled runtime/dependencies tracked for portability.
+!runtime/node.exe
+!node_modules/ws/**
