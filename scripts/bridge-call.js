@@ -6,7 +6,6 @@ const { WebSocketServer } = require("ws");
 function printUsage() {
   process.stderr.write(`Usage:
   node scripts/bridge-call.js --method tools.list
-  node scripts/bridge-call.js --method ping
   node scripts/bridge-call.js --tool jlc.bridge.ping --args "{}"
   node scripts/bridge-call.js --tool jlc.document.get_source --args "{}"
 
@@ -17,7 +16,7 @@ Options:
   --tool <name>       Tool name for tools.call
   --args <json>       Tool arguments JSON. Default: {}
   --id <id>           Request id. Default: auto timestamp
-  --timeout <ms>      Overall timeout. Default: 30000
+  --timeout <ms>      Overall timeout. Default: 60000
 `);
 }
 
@@ -26,7 +25,7 @@ function readArgs(argv) {
     host: "127.0.0.1",
     port: 9050,
     args: "{}",
-    timeout: 30000,
+    timeout: 60000,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -132,8 +131,57 @@ async function main() {
   const wss = new WebSocketServer({ host: opts.host, port: opts.port });
   let sent = false;
   let finished = false;
+  const clients = new Set();
 
   function finish(code, payload) {
+    if (finished) return;
+    finished = true;
+    clearTimeout(timeout);
+
+    const text = payload === undefined
+      ? undefined
+      : typeof payload === "string"
+        ? payload
+        : JSON.stringify(payload, null, 2);
+
+    function closeAndExit() {
+      const forceExit = setTimeout(() => {
+        try {
+          wss.close();
+        } catch (_) {
+          // Ignore close errors while the process is exiting.
+        }
+        process.exit(code);
+      }, 2000);
+
+      function maybeExit() {
+        if (clients.size === 0) {
+          clearTimeout(forceExit);
+          try {
+            wss.close();
+          } catch (_) {
+            // Ignore close errors while the process is exiting.
+          }
+          process.exit(code);
+        }
+      }
+
+      for (const client of Array.from(clients)) {
+        client.once("close", maybeExit);
+      }
+      closeServerOnly();
+      maybeExit();
+    }
+
+    if (text !== undefined) {
+      process.stdout.write(`${text}\n`, closeAndExit);
+      return;
+    }
+
+    closeAndExit();
+  }
+
+  function failBeforeConnection(code, payload) {
     if (finished) return;
     finished = true;
     clearTimeout(timeout);
@@ -149,25 +197,71 @@ async function main() {
     process.exitCode = code;
   }
 
-  const timeout = setTimeout(() => {
-    finish(2, {
+  function failConnection(code, payload) {
+    if (clients.size === 0) {
+      failBeforeConnection(code, payload);
+      return;
+    }
+    finish(code, payload);
+  }
+
+  function closeServerOnly() {
+    try {
+      wss.close();
+    } catch (_) {
+      // Ignore close errors while the process is exiting.
+    }
+  }
+
+  function printServerError(error) {
+    failBeforeConnection(1, {
+      type: "error",
+      error: `WebSocket server failed: ${error.message}`,
+    });
+  }
+
+  function printTimeout() {
+    failConnection(2, {
       type: "error",
       error: `Timed out after ${opts.timeout} ms. Confirm JLCEDA Pro is open, the extension is enabled, and the URL is ws://${opts.host}:${opts.port}.`,
     });
-  }, opts.timeout);
+  }
+
+  function printDisconnectedBeforeHello() {
+    failConnection(1, {
+      type: "error",
+      error: "JLCEDA bridge disconnected before sending hello.",
+    });
+  }
+
+  function printConnectionError(error) {
+    failConnection(1, {
+      type: "error",
+      error: `WebSocket connection error: ${error.message}`,
+    });
+  }
+
+  function closeAllClientsNow() {
+    for (const client of clients) {
+      try {
+        client.terminate();
+      } catch (_) {
+        // Ignore termination errors while the process is exiting.
+      }
+    }
+    closeServerOnly();
+  }
+
+  const timeout = setTimeout(printTimeout, opts.timeout);
 
   wss.on("listening", () => {
     process.stderr.write(`Listening on ws://${opts.host}:${opts.port}; waiting for JLCEDA bridge hello...\n`);
   });
 
-  wss.on("error", (error) => {
-    finish(1, {
-      type: "error",
-      error: `WebSocket server failed: ${error.message}`,
-    });
-  });
+  wss.on("error", printServerError);
 
   wss.on("connection", (ws) => {
+    clients.add(ws);
     process.stderr.write("JLCEDA bridge connected. Waiting for hello before sending request...\n");
 
     ws.on("message", (raw) => {
@@ -194,20 +288,18 @@ async function main() {
     });
 
     ws.on("close", () => {
+      clients.delete(ws);
       if (!finished && !sent) {
-        finish(1, {
-          type: "error",
-          error: "JLCEDA bridge disconnected before sending hello.",
-        });
+        printDisconnectedBeforeHello();
       }
     });
 
-    ws.on("error", (error) => {
-      finish(1, {
-        type: "error",
-        error: `WebSocket connection error: ${error.message}`,
-      });
-    });
+    ws.on("error", printConnectionError);
+  });
+
+  process.on("SIGINT", () => {
+    closeAllClientsNow();
+    process.exit(130);
   });
 }
 

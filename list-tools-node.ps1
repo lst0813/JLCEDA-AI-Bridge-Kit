@@ -1,6 +1,6 @@
 param(
   [int]$Port = 9050,
-  [int]$TimeoutMs = 30000
+  [int]$TimeoutMs = 60000
 )
 
 $ErrorActionPreference = "Stop"

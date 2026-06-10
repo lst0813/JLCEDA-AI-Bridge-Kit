@@ -1,6 +1,6 @@
 param(
   [int]$Port = 9050,
-  [int]$TimeoutMs = 30000
+  [int]$TimeoutMs = 60000
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,4 +10,4 @@ if (!(Test-Path $node)) {
   $node = "node"
 }
 
-& $node (Join-Path $here "scripts\bridge-call.js") --method ping --port $Port --timeout $TimeoutMs
+& $node (Join-Path $here "scripts\bridge-call.js") --tool jlc.bridge.ping --args "{}" --port $Port --timeout $TimeoutMs
