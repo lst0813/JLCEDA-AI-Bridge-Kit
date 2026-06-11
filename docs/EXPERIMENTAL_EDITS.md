@@ -1,23 +1,22 @@
-# Experimental Edits
+# 实验性改图说明
 
-The project focus is stable schematic read/review. The commands below remain
-available only for controlled write validation.
+当前项目主线是稳定读图/审图。下面这些写图命令只保留给小范围验证使用。
 
-## Dry Run First
+## 先 Dry Run
 
 ```cmd
 jlc-agent.cmd edit --file examples/write-tests/edit-plan-wire.json
 ```
 
-Apply only after checking the dry-run output:
+确认 dry run 输出没问题后，再加 `--apply` 执行：
 
 ```cmd
 jlc-agent.cmd edit --file examples/write-tests/edit-plan-wire.json --apply
 ```
 
-## Allowed Edit Tools
+## 允许的改图工具
 
-The edit command only allows this small whitelist:
+`edit` 命令只允许调用下面的小白名单：
 
 ```text
 jlc.schematic.wire.create
@@ -29,18 +28,17 @@ jlc.schematic.clear_selection
 jlc.schematic.save
 ```
 
-## Smoke Tests
+## 烟测命令
 
 ```cmd
 jlc-agent.cmd smoke-fast --find R_AI_TEST3
 jlc-agent.cmd smoke-fast --designator R_AI_FAST_0611B --apply
 ```
 
-Without `--apply`, `smoke-fast` only reads the schematic and optionally finds
-an existing designator. With `--apply`, it places one non-BOM/non-PCB 0603
-resistor and verifies the result from source readback.
+不加 `--apply` 时，`smoke-fast` 只读取原理图，并可选查找已有 designator。
+加 `--apply` 时，它会放置一个非 BOM、非 PCB 的 0603 电阻，并从 source 回读验证。
 
-Important result fields:
+重点看这些结果字段：
 
 ```text
 verified
@@ -52,7 +50,18 @@ sourceVerification.bomDisabled
 sourceVerification.pcbDisabled
 ```
 
-## Evidence Rule
+## 证据规则
 
-Do not treat a tool response alone as proof of a good edit. Always run a fresh
-`jlc-agent.cmd read` or `jlc-agent.cmd review` after applying changes.
+不要把工具返回 success 当成改图成功的最终证据。任何写入后，都要重新运行：
+
+```cmd
+jlc-agent.cmd read
+```
+
+或：
+
+```cmd
+jlc-agent.cmd review
+```
+
+以 source/netlist 回读结果为准。

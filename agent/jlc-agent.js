@@ -35,7 +35,7 @@ const DEFAULT_TEST_DEVICE = {
 };
 
 function usage() {
-  return `Usage:
+  return `用法:
   jlc-agent ping [--port 9050] [--timeout 60000]
   jlc-agent tools
   jlc-agent current
@@ -45,18 +45,17 @@ function usage() {
   jlc-agent netlist [--out reports/latest/netlist.json] [--max-chars 500000]
   jlc-agent read [--report-dir reports/latest]
   jlc-agent review [--report-dir reports/latest] [--no-drc]
-  jlc-agent edit --file edit-plan.json [--apply]                 (experimental)
-  jlc-agent smoke --file edit-plan.json [--apply]                (experimental)
+  jlc-agent edit --file edit-plan.json [--apply]                 (实验)
+  jlc-agent smoke --file edit-plan.json [--apply]                (实验)
   jlc-agent smoke-fast [--file edit-plan.json | --designator R_AI_FAST_123456] [--apply]
-                                                                  (experimental)
+                                                                  (实验)
 
-Notes:
-  The JLCEDA extension is a WebSocket client. This command listens on
-  ws://127.0.0.1:9050, waits for hello, sends one request, then exits.
-  read/review are the primary workflow. Edit/smoke commands are retained for
-  controlled validation only.
+说明:
+  嘉立创扩展是 WebSocket client。本命令会临时监听
+  ws://127.0.0.1:9050，等待 hello，发送请求，然后退出。
+  read/review 是主流程；edit/smoke 只保留给受控验证。
 
-  Prefer --args-file for complex JSON. It avoids PowerShell/CMD quote traps.
+  复杂 JSON 参数优先使用 --args-file，避免 PowerShell/CMD 引号问题。
 `;
 }
 

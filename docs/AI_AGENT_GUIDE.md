@@ -1,13 +1,13 @@
-# AI Agent Guide
+# AI Agent 接手说明
 
-This note is for any AI or script that operates this kit.
+这份文档给后续接手的 AI 或脚本看。
 
-## Primary Goal
+## 首要目标
 
-Use the project as a stable JLCEDA schematic read/review tool first. Treat
-write/edit commands as experimental validation helpers only.
+先把这个项目当成稳定的嘉立创原理图读图/审图工具。写图/改图命令只作为实验性
+验证助手，不是主流程。
 
-Preferred flow:
+推荐流程：
 
 ```cmd
 jlc-agent.cmd ping
@@ -16,7 +16,7 @@ jlc-agent.cmd read --report-dir reports/latest
 jlc-agent.cmd review --report-dir reports/latest
 ```
 
-The useful outputs are:
+优先查看这些输出：
 
 ```text
 reports/latest/diagnostics.json
@@ -28,82 +28,74 @@ reports/latest/source.schsrc
 reports/latest/netlist.json
 ```
 
-## Connection Model
+## 连接模型
 
-This is not a normal always-on MCP server.
+这不是一个常驻 MCP Server。
 
 ```text
-AI/script
-  -> temporary local WebSocket listener on ws://127.0.0.1:9050
-  -> jlceda-mcp-bridge extension
-  -> active JLCEDA project and schematic sheet
+AI/脚本
+  -> 临时本地 WebSocket 监听器 ws://127.0.0.1:9050
+  -> jlceda-mcp-bridge 扩展
+  -> 当前嘉立创工程和原理图页面
 ```
 
-Important facts:
+关键点：
 
-- The extension is the WebSocket client.
-- The local command listens first, then waits for the extension `hello`.
-- Only one command should own port `9050` at a time.
-- A command can spend time waiting for the extension reconnect loop even when
-  the actual JLCEDA RPC is fast.
-- `read` and `review` keep one bridge session open while reading current
-  document metadata, source, netlist, and optional DRC data.
+- 嘉立创扩展是 WebSocket client。
+- 本地命令要先监听，再等待扩展发送 `hello`。
+- 同一时间只能有一个命令占用 `9050`。
+- 命令总耗时可能主要花在等待扩展重连上，真正的 JLCEDA RPC 可能很快。
+- `read` 和 `review` 会在同一个连接里读取 current、source、netlist 和可选 DRC。
 
-## What To Trust
+## 证据优先级
 
-Trust order for schematic review:
+审图时按下面顺序信任证据：
 
-1. `diagnostics.json` for run status, failures, timings, and truncation.
-2. `netlist.json` / `nets.csv` for electrical connectivity.
-3. `source.schsrc` / `components.csv` for schematic object evidence.
-4. Tool call success messages last.
+1. `diagnostics.json`：运行状态、失败原因、耗时、截断情况。
+2. `netlist.json` / `nets.csv`：电气网络连接。
+3. `source.schsrc` / `components.csv`：原理图对象和属性。
+4. 工具调用返回 success：只能作为弱证据。
 
-Do not infer electrical correctness from visuals alone. A label-looking text
-object is not necessarily a real net label, and a visually adjacent wire is not
-necessarily electrically connected.
+不要只凭视觉判断电气连接。看起来像网络标签的普通文字，不一定是真实 net label；
+看起来贴近引脚的线，也不一定真的接入了网络。
 
-## Active Tab Rule
+## 当前页面规则
 
-Before reviewing, the user should focus a schematic sheet in JLCEDA.
+审图前必须让嘉立创焦点停在原理图页面。
 
-If the active tab is a PCB, footprint, library item, or another document type,
-`read`/`review` should fail quickly and report that in `diagnostics.json`.
-Do not convert that failure into a schematic conclusion.
+如果当前页面是 PCB、封装、库文件或其他类型，`read` / `review` 应该快速失败，并在
+`diagnostics.json` 里写明原因。不要把这种失败解释成原理图结论。
 
-## Review Scope
+## 当前审图能力
 
-Current review is useful for:
+现在的审图适合做：
 
-- reading source and netlist in one stable pass
-- listing components and nets
-- spotting empty pins
-- spotting single-end named nets
-- spotting suspicious net-name variants
-- reporting basic DRC availability and errors
+- 一次稳定读取 source 和 netlist
+- 列出组件和网络
+- 标出空引脚
+- 标出单端命名网络
+- 标出疑似拼写错误或相近网络名
+- 报告基础 DRC 调用状态和错误
 
-It is not yet a full electrical sign-off system. Domain-specific rules still
-need to be added for power trees, MCU minimum systems, connectors, isolation,
-analog/digital boundaries, and current-source design checks.
+它还不是完整电气签核系统。后续还需要增加电源树、MCU 最小系统、连接器一致性、
+隔离地/模拟地/数字地、恒流源领域规则等检查。
 
-## Failure Handling
+## 常见失败
 
-Common failures:
+- 超时：嘉立创或扩展没开、URL 错误，或扩展还没重连到本地监听器。
+- `EADDRINUSE`：另一个进程占用了 `9050`。
+- 非原理图页面：切回原理图后重跑。
+- source/netlist 被截断：提高 `--max-chars`，或人工检查部分输出。
 
-- Timeout: JLCEDA/extension is closed, URL is wrong, or reconnect has not
-  reached the listener yet.
-- `EADDRINUSE`: another process is listening on port `9050`.
-- Non-schematic document: focus a schematic sheet and rerun.
-- Truncated source/netlist: increase `--max-chars` or inspect partial output.
-
-Check port ownership:
+检查端口：
 
 ```powershell
 netstat -ano | findstr :9050
 ```
 
-## Do Not
+## 不要做
 
-- Do not run multiple bridge commands concurrently on port `9050`.
-- Do not treat edit/smoke commands as the main workflow.
-- Do not claim the whole project is fully reviewed from a single basic pass.
-- Do not delete or rewrite generated evidence unless it has been archived.
+- 不要并发运行多个桥接命令。
+- 不要把 edit/smoke 当成主工作流。
+- 不要根据一次基础审图就宣称整个项目已完整验证。
+- 不要删除或覆盖生成证据，除非已经归档。

@@ -1,17 +1,17 @@
-# Repository Structure
+# 仓库结构
 
-This repository is organized around a stable JLCEDA read/review workflow.
+这个仓库围绕“稳定读图/审图”来组织。
 
-## Main Path
+## 主链路
 
 ```text
 jlc-agent.cmd
   -> agent/jlc-agent.js
   -> plugin/jlceda-mcp-bridge_v0.0.17.eext
-  -> current JLCEDA schematic sheet
+  -> 当前嘉立创原理图页面
 ```
 
-Use these commands first:
+优先使用：
 
 ```cmd
 jlc-agent.cmd ping
@@ -20,47 +20,48 @@ jlc-agent.cmd read
 jlc-agent.cmd review
 ```
 
-## Directory Roles
+## 目录职责
 
 ```text
-agent/          Main Node.js agent. Reads source/netlist, generates reports.
-plugin/         JLCEDA extension package installed into JLCEDA.
-runtime/        Bundled Node.js runtime used by jlc-agent.cmd.
-examples/       Read-only RPC argument samples.
+agent/          主要 Node.js Agent。读取 source/netlist，生成报告。
+plugin/         嘉立创扩展安装包。
+runtime/        jlc-agent.cmd 使用的便携 Node.js 运行时。
+examples/       只读 RPC 参数样例。
 examples/write-tests/
-                Archived write/edit validation plans and smoke inputs.
+                已归档的写图/改图验证计划和烟测输入。
 reports/latest/
-                Latest read/review outputs only.
+                最近一次读图/审图输出。
 reports/archive/
-                Historical validation outputs and smoke-test evidence.
-docs/           User and AI handoff documentation.
-scripts/        Lower-level bridge/debug helpers.
-node_modules/   Local dependency for the agent runtime.
-package.json    Optional npm metadata for dependency clarity.
+                历史验证输出和烟测证据。
+docs/           使用说明、风险说明和 AI 交接文档。
+scripts/        底层桥接/调试辅助脚本。
+node_modules/   本地运行依赖。
+package.json    依赖和脚本元信息。
 ```
 
-Useful docs:
+## 文档说明
 
 ```text
-docs/AGENT_USAGE.md          Command reference.
-docs/AI_AGENT_GUIDE.md       Handoff notes for AI/script operators.
-docs/AI_CAUTION_NOTES.md     Review evidence and false-positive cautions.
-docs/EXPERIMENTAL_EDITS.md   Write/edit validation commands.
-docs/PORTABLE_CHECKLIST.md   Copy-to-new-machine checklist.
-docs/BINARY_NOTES.md         Bundled runtime and binary notes.
+docs/AGENT_USAGE.md          命令使用说明。
+docs/AI_AGENT_GUIDE.md       给 AI/脚本接手者的操作说明。
+docs/AI_CAUTION_NOTES.md     审图证据和误判风险说明。
+docs/EXPERIMENTAL_EDITS.md   实验性写图/改图命令说明。
+docs/PORTABLE_CHECKLIST.md   换电脑部署检查清单。
+docs/BINARY_NOTES.md         便携运行时和二进制文件说明。
 ```
 
-## Current Policy
+## 当前策略
 
-- Treat `read` and `review` as the primary workflow.
-- Keep write/edit helpers available but experimental.
-- Keep `reports/latest` clean; move old evidence into `reports/archive`.
-- Prefer `diagnostics.json` and `summary.md` when checking run status.
-- Do not run multiple commands on port `9050` at the same time.
+- `read` 和 `review` 是主流程。
+- 写图/改图工具保留，但标记为实验能力。
+- `reports/latest` 只放最近一次正式读图/审图输出。
+- 历史验证证据放到 `reports/archive`。
+- 判断运行状态优先看 `diagnostics.json` 和 `summary.md`。
+- 不要并发运行多个占用 `9050` 的命令。
 
-## Latest Report Files
+## 最近报告文件
 
-`reports/latest` should normally contain:
+`reports/latest` 通常包含：
 
 ```text
 summary.md

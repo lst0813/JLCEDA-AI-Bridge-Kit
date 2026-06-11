@@ -1,8 +1,8 @@
-# Portable Checklist
+# 便携部署检查清单
 
-Use this when copying the kit to another Windows machine.
+把这个工具包复制到另一台 Windows 电脑时，按这份清单检查。
 
-## Required Files
+## 必需文件
 
 ```text
 jlc-agent.cmd
@@ -21,7 +21,7 @@ docs/AI_CAUTION_NOTES.md
 docs/BINARY_NOTES.md
 ```
 
-The legacy wrappers are optional but useful for compatibility:
+旧入口不是必须，但保留后兼容性更好：
 
 ```text
 ping.cmd
@@ -30,23 +30,23 @@ get-source.cmd
 call-tool.cmd
 ```
 
-## JLCEDA Setup
+## 嘉立创设置
 
-1. Install and open JLCEDA Pro or the target private deployment.
-2. Import `plugin/jlceda-mcp-bridge_v0.0.17.eext`.
-3. Enable the extension.
-4. Allow external access/interaction if the client asks for permission.
-5. Set the extension WebSocket URL to:
+1. 安装并打开嘉立创 EDA 专业版或目标私有化版本。
+2. 导入 `plugin/jlceda-mcp-bridge_v0.0.17.eext`。
+3. 启用扩展。
+4. 如果客户端提示权限，允许外部访问/外部交互。
+5. 设置扩展 WebSocket URL：
 
    ```text
    ws://127.0.0.1:9050
    ```
 
-6. Open a project and focus a schematic sheet.
+6. 打开工程，并切到原理图页面。
 
-## Connection Test
+## 连接测试
 
-Run from the kit directory:
+在工具包目录运行：
 
 ```cmd
 jlc-agent.cmd ping
@@ -54,32 +54,32 @@ jlc-agent.cmd current
 jlc-agent.cmd read --report-dir reports/latest --no-drc
 ```
 
-Expected result:
+合格表现：
 
-- `ping` returns a bridge response.
-- `current` shows the active project/document.
-- `read` writes `reports/latest/diagnostics.json`.
-- `diagnostics.json` shows `status: "ok"` when a schematic sheet is active.
+- `ping` 返回桥接响应。
+- `current` 显示当前工程/文档。
+- `read` 写出 `reports/latest/diagnostics.json`。
+- 当前是原理图页面时，`diagnostics.json` 里应显示 `status: "ok"`。
 
-## Common Problems
+## 常见问题
 
-### Command Times Out
+### 命令超时
 
-Check that JLCEDA is open, the extension is enabled, the URL is correct, and a
-schematic sheet is active. The extension may show `connecting` when no local
-command is listening; that is normal.
+检查嘉立创是否打开、扩展是否启用、URL 是否正确、当前是否为原理图页面。
 
-### Port Is Busy
+扩展显示 `connecting` 不一定异常；没有本地命令监听时，它本来就连不上。
 
-Only one process can listen on `9050`.
+### 端口被占用
+
+同一时间只能有一个进程监听 `9050`：
 
 ```powershell
 netstat -ano | findstr :9050
 ```
 
-Wait for the previous command to exit before running another one.
+等上一个命令退出后，再运行下一个命令。
 
-### Node Is Missing
+### 没有 Node
 
-The kit includes `runtime/node.exe`. If it is removed or blocked by security
-software, install official Node.js or restore the bundled runtime.
+工具包自带 `runtime/node.exe`。如果它被删除或被安全软件拦截，可以安装官方 Node.js，
+或者恢复这个便携运行时。

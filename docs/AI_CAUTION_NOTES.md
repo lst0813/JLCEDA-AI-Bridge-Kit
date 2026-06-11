@@ -1,47 +1,46 @@
-# AI Caution Notes
+# AI 审图注意事项
 
-Connection success is not the same thing as schematic correctness.
+连接成功不等于原理图正确。
 
-## Main Principle
+## 核心原则
 
-Every important conclusion should be backed by readback evidence:
+任何重要结论都应该有回读证据支撑：
 
-- source readback for objects and attributes
-- netlist readback for electrical connectivity
-- diagnostics for status, errors, timings, and truncation
+- 用 source 回读确认对象和属性。
+- 用 netlist 回读确认电气连接。
+- 用 diagnostics 确认状态、错误、耗时和截断情况。
 
-## Easy Mistakes
+## 容易误判的地方
 
-### Text Is Not A Net
+### 普通文字不是网络
 
-Plain text such as `GND`, `+3V3`, or `SWDIO` does not prove electrical
-connectivity. Prefer netlist evidence and real net-label/source attributes.
+图上写着 `GND`、`+3V3`、`SWDIO`，不代表它一定参与电气连接。优先看 netlist，
+以及 source 里真实的网络标签/网络属性。
 
-### Nearby Is Not Connected
+### 视觉贴近不代表连接
 
-Two objects that appear visually close may still be electrically separate.
-Use netlist endpoints, source objects, or JLCEDA DRC to support the conclusion.
+两段图形看起来贴得很近，电气上也可能是断开的。要用 netlist endpoints、
+source 对象或嘉立创 DRC 来支撑判断。
 
-### Tool Success Is Weak Evidence
+### success 是弱证据
 
-A tool call can return success while the design is still incomplete or the
-active tab was wrong. For read/review work, the report files are the evidence.
+工具返回 success 只能说明调用层面没有直接失败，不能说明原理图已经正确。读图/审图
+时，报告文件才是证据。
 
-### Basic Rules Are Not Sign-Off
+### 基础规则不是签核
 
-The current rules catch common schematic hygiene risks, but they do not replace
-engineering review. A design can pass the current basic checks and still have
-wrong rails, missing decoupling, bad connector mapping, or unsafe isolation.
+当前规则能抓一些常见原理图卫生问题，但不能替代工程审查。即使基础规则没有报错，
+仍可能存在电源轨错误、去耦缺失、连接器映射错误、隔离不安全等问题。
 
-## Preferred Review Habit
+## 推荐审图习惯
 
-1. Run `jlc-agent.cmd review --report-dir reports/latest`.
-2. Open `reports/latest/diagnostics.json`.
-3. Confirm `status`, `documentKind`, source/netlist lengths, and truncation.
-4. Read `summary.md` and `risks.md`.
-5. Use `components.csv` and `nets.csv` when checking details.
+1. 运行 `jlc-agent.cmd review --report-dir reports/latest`。
+2. 先打开 `reports/latest/diagnostics.json`。
+3. 确认 `status`、source/netlist 长度、是否截断、是否有 errors。
+4. 再看 `summary.md` 和 `risks.md`。
+5. 需要细查时，用 `components.csv` 和 `nets.csv`。
 
-## Edit Warning
+## 改图提醒
 
-Write/edit helpers are kept only for controlled experiments. If any edit is
-used, verify with a fresh `read` or `review` run before drawing conclusions.
+写图/改图工具只保留给受控实验。任何写入之后，都要重新跑一次 `read` 或 `review`，
+用回读结果确认。

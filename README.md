@@ -1,31 +1,31 @@
 # JLCEDA AI Bridge Kit
 
-Portable bridge tools for connecting local AI/scripts to JLCEDA Pro through
-the `jlceda-mcp-bridge` extension.
+这是一个把本地 AI/脚本连接到嘉立创 EDA 的便携工具包，核心插件是
+`jlceda-mcp-bridge`。
 
-This is not a standard MCP server. The extension is a WebSocket client. Local
-commands listen on `ws://127.0.0.1:9050`, wait for the extension `hello`, and
-send RPC-style requests. `read` and `review` keep one listener open long enough
-to read the schematic, netlist, and diagnostics in one stable pass.
+它不是标准 MCP Server。嘉立创扩展本身是 WebSocket client，本地命令会临时
+监听 `ws://127.0.0.1:9050`，等扩展连进来并发送 `hello` 后，再发起 RPC 风格
+请求。
 
 ```text
-AI/script -> local WebSocket listener -> JLCEDA extension -> current project
+AI/脚本 -> 本地 WebSocket 监听器 -> 嘉立创扩展 -> 当前工程/原理图
 ```
 
-## Current Goal
+## 当前目标
 
-The project is being shaped first into a stable JLCEDA read/review agent:
+这个仓库现在优先做成一个稳定的嘉立创读图/审图 Agent：
 
-- read the current document source and netlist
-- generate structured review reports
-- flag basic schematic risks
-- keep small edit helpers as secondary/manual validation tools
+- 读取当前原理图 source 和 netlist
+- 生成结构化审图报告
+- 标记基础原理图风险
+- 保留小步改图工具，但只作为实验/验证能力
 
-It is intentionally not a "fully autonomous schematic generator" yet.
+它目前不是“全自动画完整原理图”的系统，也不应该把一次基础检查当成完整电气
+签核。
 
-## Preferred Entry Point
+## 推荐入口
 
-Use:
+日常优先使用：
 
 ```cmd
 jlc-agent.cmd ping
@@ -35,7 +35,7 @@ jlc-agent.cmd read
 jlc-agent.cmd review
 ```
 
-Compatibility wrappers are still kept:
+旧入口仍然保留，用于兼容：
 
 ```cmd
 ping.cmd
@@ -44,36 +44,36 @@ get-source.cmd
 call-tool.cmd
 ```
 
-They forward to `jlc-agent.cmd`.
+这些旧入口会转到 `jlc-agent.cmd`。
 
-## Setup
+## 安装和连接
 
-1. Install and open JLCEDA Pro.
-2. Import the extension:
+1. 安装并打开嘉立创 EDA 专业版或目标私有化版本。
+2. 导入扩展：
 
    ```text
    plugin/jlceda-mcp-bridge_v0.0.17.eext
    ```
 
-3. Enable the extension and allow external access/interaction.
-4. Set the extension WebSocket URL to:
+3. 启用扩展，并允许外部访问/外部交互权限。
+4. 把扩展 WebSocket URL 设置为：
 
    ```text
    ws://127.0.0.1:9050
    ```
 
-5. Open a project and schematic page.
-6. Run:
+5. 打开工程，并切到原理图页面。
+6. 在本目录运行：
 
    ```cmd
    jlc-agent.cmd ping
    jlc-agent.cmd review
    ```
 
-## Generated Reports
+## 生成报告
 
-`jlc-agent.cmd read` and `jlc-agent.cmd review` write files under
-`reports/latest` by default:
+`jlc-agent.cmd read` 和 `jlc-agent.cmd review` 默认会写入
+`reports/latest`：
 
 ```text
 summary.md
@@ -88,44 +88,51 @@ drc.json
 diagnostics.json
 ```
 
-`diagnostics.json` records read status, per-step timings, truncation, and any
-bridge/JLCEDA errors. If the active JLCEDA tab is not a schematic sheet,
-`read`/`review` now exits quickly with `status: "failed"` instead of producing
-a misleading PCB/footprint report.
+其中 `diagnostics.json` 最重要，记录本次读取是否成功、每一步耗时、source/netlist
+是否截断，以及桥接或嘉立创返回的错误。
 
-## Repository Layout
+如果当前焦点不是原理图页面，`read` / `review` 会快速失败并写明原因，避免把
+PCB、封装或其他页面误当成原理图来分析。
+
+## 仓库结构
 
 ```text
-agent/        main read/review command implementation
-plugin/       JLCEDA extension package
-runtime/      bundled Node.js runtime
-examples/     read-only RPC argument samples
-reports/latest/ latest read/review output
-reports/archive/ archived validation and smoke-test artifacts
-docs/         usage and handoff notes
-scripts/      lower-level bridge/debug helpers
-package.json  optional npm metadata for dependency clarity
+agent/          主要 Node.js Agent，负责读图、解析和生成报告
+plugin/         嘉立创扩展安装包
+runtime/        便携 Node.js 运行时
+examples/       只读 RPC 参数样例
+examples/write-tests/
+                实验性写图/改图验证样例
+reports/latest/
+                最近一次读图/审图输出
+reports/archive/
+                历史验证和烟测证据归档
+docs/           使用说明和交接文档
+scripts/        底层桥接/调试脚本
+package.json    依赖和脚本说明
 ```
 
-## Experimental Edits
+## 实验性改图
 
-Small-step edit helpers are still present for controlled validation, but they
-are secondary to the read/review workflow. Their examples live under
-`examples/write-tests/`; details are in `docs/EXPERIMENTAL_EDITS.md`.
+小步改图工具仍然保留，但不是主线能力。相关样例在
+`examples/write-tests/`，说明见：
 
-## Important Notes
+```text
+docs/EXPERIMENTAL_EDITS.md
+```
 
-- Only one command can listen on port `9050` at a time.
-- If a command times out right after another command ran, wait a few seconds
-  and retry. For schematic checks, prefer `read` or `review` so the listener
-  stays open while source, netlist, diagnostics, and optional DRC are gathered.
-- A tool returning success does not prove the schematic is electrically
-  correct. Prefer `jlc.document.get_source` and `jlc.schematic.get_netlist`
-  readback.
-- `websocat.exe`, `call-tool.ps1`, `list-tools.ps1`, and `test-ping.ps1` are
-  legacy/debug fallbacks. Day-to-day use should go through `jlc-agent.cmd`.
+## 重要注意事项
 
-More details:
+- 同一时间只能有一个命令监听 `9050`。
+- 扩展显示 `connecting` 不一定是异常；本地命令没有监听时，它本来就连不上。
+- 刚跑完一个命令后如果下一个命令超时，等几秒再重试。
+- 原理图检查优先使用 `read` / `review`，它们会在同一个连接里读取 current、
+  source、netlist、diagnostics 和可选 DRC。
+- 工具返回 success 不代表电气正确，最终以 source/netlist 回读为准。
+- `websocat.exe`、`call-tool.ps1`、`list-tools.ps1`、`test-ping.ps1` 是旧调试
+  备用入口，日常使用走 `jlc-agent.cmd`。
+
+更多说明：
 
 ```text
 docs/AGENT_USAGE.md
