@@ -1,0 +1,22 @@
+﻿{
+  "operations": [
+    {
+      "tool": "jlc.schematic.place_device",
+      "arguments": {
+        "deviceUuid": "fda93f9c26224f7aa97d1a6a7b2d5fd7",
+        "libraryUuid": "0819f05c4eef4c71ace90d822a990e87",
+        "x": 1180,
+        "y": 420,
+        "rotation": 0,
+        "addIntoBom": false,
+        "addIntoPcb": false,
+        "designator": "R_AI_PRIV_0611A",
+        "name": "AI_FAST_TEST_RESISTOR_PRIV_A"
+      }
+    },
+    {
+      "tool": "jlc.schematic.save",
+      "arguments": {}
+    }
+  ]
+}

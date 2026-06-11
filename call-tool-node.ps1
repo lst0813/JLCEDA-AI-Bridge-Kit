@@ -9,9 +9,4 @@ param(
 
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$node = Join-Path $here "runtime\node.exe"
-if (!(Test-Path $node)) {
-  $node = "node"
-}
-
-& $node (Join-Path $here "scripts\bridge-call.js") --tool $Name --args $ArgumentsJson --port $Port --timeout $TimeoutMs
+& (Join-Path $here "jlc-agent.cmd") call --tool $Name --args-json $ArgumentsJson --port $Port --timeout $TimeoutMs

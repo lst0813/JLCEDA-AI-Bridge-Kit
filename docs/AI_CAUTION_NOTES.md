@@ -1,165 +1,47 @@
 # AI Caution Notes
 
-这份说明专门提醒接手的 AI：连接成功不等于会正确画原理图。之前踩坑的核心原因不是 WebSocket 链路不通，而是对嘉立创原理图对象模型理解不够准。
+Connection success is not the same thing as schematic correctness.
 
-## 一句话原则
+## Main Principle
 
-不要把“命令返回成功”当成“原理图电气正确”。每次关键绘图后，都要回读当前图纸源数据或让用户截图确认。
+Every important conclusion should be backed by readback evidence:
 
-## 最容易误判的地方
+- source readback for objects and attributes
+- netlist readback for electrical connectivity
+- diagnostics for status, errors, timings, and truncation
 
-### 1. 普通文字不是网络标签
+## Easy Mistakes
 
-在图上写 `GND`、`+3V3`、`SWDIO` 这类文字，不代表电气连接成立。
+### Text Is Not A Net
 
-真正要检查的是源数据里是否存在网络属性，例如：
+Plain text such as `GND`, `+3V3`, or `SWDIO` does not prove electrical
+connectivity. Prefer netlist evidence and real net-label/source attributes.
 
-```text
-ATTR key=NET
-```
+### Nearby Is Not Connected
 
-如果只是普通 `TEXT` 或说明文字，它只给人看，不参与电气网络。
+Two objects that appear visually close may still be electrically separate.
+Use netlist endpoints, source objects, or JLCEDA DRC to support the conclusion.
 
-### 2. 线条贴近引脚不一定等于连接
+### Tool Success Is Weak Evidence
 
-视觉上“线碰到引脚”不一定等于电气连接。AI 不能只根据坐标接近就判断成功。
+A tool call can return success while the design is still incomplete or the
+active tab was wrong. For read/review work, the report files are the evidence.
 
-必须确认：
+### Basic Rules Are Not Sign-Off
 
-- 有真实导线对象。
-- 导线端点与引脚/网络标签关系正确。
-- 同一信号最终归入同一个 NET。
+The current rules catch common schematic hygiene risks, but they do not replace
+engineering review. A design can pass the current basic checks and still have
+wrong rails, missing decoupling, bad connector mapping, or unsafe isolation.
 
-### 3. success 不是最终证据
+## Preferred Review Habit
 
-某些工具可能返回 `success`，但实际图纸里可能只是生成了图形、文字或位置错误的对象。最终证据优先级：
+1. Run `jlc-agent.cmd review --report-dir reports/latest`.
+2. Open `reports/latest/diagnostics.json`.
+3. Confirm `status`, `documentKind`, source/netlist lengths, and truncation.
+4. Read `summary.md` and `risks.md`.
+5. Use `components.csv` and `nets.csv` when checking details.
 
-1. `jlc.document.get_source` 读回来的源数据。
-2. 用户截图。
-3. 工具调用返回值。
+## Edit Warning
 
-### 4. 网络标签方向和位置会影响可读性
-
-标签即使电气上正确，如果方向反了、压住引脚、离线太远、和器件重叠，也是不合格的原理图。
-
-放置标签时要遵守：
-
-- MCU 左侧引脚的标签放在左边，文字朝正常阅读方向。
-- MCU 右侧引脚的标签放在右边，文字朝正常阅读方向。
-- 电源网络通常放上方或电源模块附近。
-- GND 通常向下或靠近地符号。
-- 不要让标签覆盖引脚名、器件名、参数值。
-
-### 5. 可读性优先用短线加网络标签
-
-不要为了“看起来都连上”拉很多跨区域长线。推荐模式：
-
-```text
-器件引脚 -> 短导线 -> 网络标签
-```
-
-同名网络标签负责电气连接。这样比长线交叉更适合 MCU 最小系统板、下载口、USB、串口、电源模块。
-
-## 推荐工作流
-
-### 第一步：先发现工具
-
-```powershell
-.\list-tools-node.ps1
-```
-
-不要凭记忆乱猜工具参数。先看当前插件实际暴露了哪些工具。
-
-### 第二步：小步绘制
-
-不要一次性画完整张图。按功能块推进：
-
-```text
-电源
--> MCU
--> 复位/启动
--> 晶振
--> SWD 下载
--> USB/串口
--> 去耦和说明
-```
-
-每完成一块就验证一次。
-
-### 第三步：回读源数据
-
-运行：
-
-```powershell
-.\get-source-node.ps1
-```
-
-检查是否真的有：
-
-```text
-WIRE
-LINE
-ATTR key=NET
-```
-
-如果图纸看起来有标签，但源数据里没有 `ATTR key=NET`，就要当作没有真实网络标签处理。
-
-### 第四步：再看截图修版面
-
-源数据确认电气对象存在后，再根据截图修：
-
-- 标签方向。
-- 器件间距。
-- 是否重叠。
-- 是否反了。
-- 中文说明是否乱码。
-- 网络名是否清晰。
-
-## STM32F103C8T6 最小系统常见检查点
-
-真实器件层面至少应有：
-
-- STM32F103C8T6 MCU。
-- 3.3V 电源入口/稳压或电源标识。
-- VDD/VSS 去耦电容。
-- NRST 复位电路。
-- BOOT0 上拉/下拉配置。
-- HSE 晶振和负载电容。
-- SWD 下载口：`SWDIO`、`SWCLK`、`NRST`、`+3V3`、`GND`。
-- 串口或 USB 信号按需求标出。
-
-网络层面至少应清楚出现：
-
-```text
-+3V3
-GND
-NRST
-BOOT0
-HSE_IN
-HSE_OUT
-SWDIO
-SWCLK
-```
-
-如果加入 USB/串口，还应检查：
-
-```text
-USB_DM
-USB_DP
-USART1_TX
-USART1_RX
-+5V
-```
-
-## AI 自检问题
-
-在交付前，AI 必须问自己：
-
-- 我放的是真实器件，还是只是文字/图形？
-- 网络名是普通文字，还是实际 NET 标签？
-- 导线是否真实存在？
-- 有没有用源数据验证，而不是只看 success？
-- 截图里标签方向和位置是否便于人读？
-- 是否有长线乱穿、标签重叠、中文乱码、器件反向的问题？
-
-如果这些问题没过，不要宣布完成。
+Write/edit helpers are kept only for controlled experiments. If any edit is
+used, verify with a fresh `read` or `review` run before drawing conclusions.

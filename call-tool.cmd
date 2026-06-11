@@ -1,2 +1,2 @@
 @echo off
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0call-tool-node.ps1" %*
+call "%~dp0jlc-agent.cmd" call %*

@@ -1,86 +1,85 @@
 # Portable Checklist
 
-把这个目录复制到另一台 Windows 电脑后，按下面顺序检查。
+Use this when copying the kit to another Windows machine.
 
-## 必需文件
+## Required Files
 
-- `plugin/jlceda-mcp-bridge_v0.0.17.eext`
-- `runtime/node.exe`
-- `node_modules/ws/package.json`
-- `scripts/bridge-call.js`
-- `ping.cmd`
-- `list-tools.cmd`
-- `call-tool.cmd`
-- `get-source.cmd`
-- `docs/AI_AGENT_GUIDE.md`
-- `docs/AI_CAUTION_NOTES.md`
-- `docs/BINARY_NOTES.md`
-
-## 嘉立创设置
-
-- 已安装嘉立创 EDA 专业版。
-- 已导入 `plugin/jlceda-mcp-bridge_v0.0.17.eext`。
-- 插件已启用。
-- 外部交互/外部访问权限已允许。
-- 插件 WebSocket URL 是：
-
-  ```text
-  ws://127.0.0.1:9050
-  ```
-
-- 已打开一个工程和原理图。
-
-## 连接测试
-
-在工具包目录串行运行：
-
-```cmd
-ping.cmd
-list-tools.cmd
+```text
+jlc-agent.cmd
+agent/jlc-agent.js
+plugin/jlceda-mcp-bridge_v0.0.17.eext
+runtime/node.exe
+node_modules/ws/package.json
+node_modules/ws/index.js
+scripts/bridge-call.js
+package.json
+README.md
+docs/AGENT_USAGE.md
+docs/REPOSITORY_STRUCTURE.md
+docs/AI_AGENT_GUIDE.md
+docs/AI_CAUTION_NOTES.md
+docs/BINARY_NOTES.md
 ```
 
-合格标准：
+The legacy wrappers are optional but useful for compatibility:
 
-- `ping.cmd` 返回正常 response 或 `pong`。
-- `list-tools.cmd` 能列出 `jlc.*` 工具。
-- 默认最多等待 60 秒，因为插件短连接断开后有时需要重新连接。
+```text
+ping.cmd
+list-tools.cmd
+get-source.cmd
+call-tool.cmd
+```
 
-## 常见问题
+## JLCEDA Setup
 
-### 运行 `.ps1` 被拦截
+1. Install and open JLCEDA Pro or the target private deployment.
+2. Import `plugin/jlceda-mcp-bridge_v0.0.17.eext`.
+3. Enable the extension.
+4. Allow external access/interaction if the client asks for permission.
+5. Set the extension WebSocket URL to:
 
-优先使用 `.cmd` 文件。它们已经带了 `ExecutionPolicy Bypass`。
+   ```text
+   ws://127.0.0.1:9050
+   ```
 
-### 一直超时
+6. Open a project and focus a schematic sheet.
 
-检查：
+## Connection Test
 
-- 嘉立创 EDA 是否打开。
-- 插件是否启用。
-- 插件 URL 是否为 `ws://127.0.0.1:9050`。
-- 是否打开了工程/原理图。
-- `9050` 是否被其他进程占用。
+Run from the kit directory:
 
-### 端口被占用
+```cmd
+jlc-agent.cmd ping
+jlc-agent.cmd current
+jlc-agent.cmd read --report-dir reports/latest --no-drc
+```
 
-同一时间只能有一个脚本监听 `9050`。检查：
+Expected result:
+
+- `ping` returns a bridge response.
+- `current` shows the active project/document.
+- `read` writes `reports/latest/diagnostics.json`.
+- `diagnostics.json` shows `status: "ok"` when a schematic sheet is active.
+
+## Common Problems
+
+### Command Times Out
+
+Check that JLCEDA is open, the extension is enabled, the URL is correct, and a
+schematic sheet is active. The extension may show `connecting` when no local
+command is listening; that is normal.
+
+### Port Is Busy
+
+Only one process can listen on `9050`.
 
 ```powershell
 netstat -ano | findstr :9050
 ```
 
-如果上一个命令刚结束，下一个命令立刻超时，等几秒后重试。
+Wait for the previous command to exit before running another one.
 
-### 另一台电脑没有 Node
+### Node Is Missing
 
-本工具包已包含 `runtime/node.exe`。脚本会优先使用它；如果不存在，才会尝试系统里的 `node`。
-
-### 想确认图纸真实连线
-
-运行：
-
-```cmd
-get-source.cmd
-```
-
-检查返回内容里是否存在 `WIRE`、`LINE`、`ATTR key=NET`。
+The kit includes `runtime/node.exe`. If it is removed or blocked by security
+software, install official Node.js or restore the bundled runtime.

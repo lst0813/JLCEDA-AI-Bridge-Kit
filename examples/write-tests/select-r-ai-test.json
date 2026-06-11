@@ -1,0 +1,14 @@
+{
+  "operations": [
+    {
+      "tool": "jlc.schematic.select",
+      "arguments": {
+        "primitiveIds": [
+          "$1I15949"
+        ],
+        "clearFirst": true,
+        "zoom": true
+      }
+    }
+  ]
+}

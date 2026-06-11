@@ -1,0 +1,14 @@
+{
+  "operations": [
+    {
+      "tool": "jlc.schematic.wire.create",
+      "arguments": {
+        "line": [
+          [100, 100],
+          [140, 100]
+        ],
+        "net": "EXAMPLE_NET"
+      }
+    }
+  ]
+}

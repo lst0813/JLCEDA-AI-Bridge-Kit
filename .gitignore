@@ -2,6 +2,7 @@
 *.log
 *.tmp
 *.bak
+reports/
 
 # Keep bundled runtime/dependencies tracked for portability.
 !runtime/node.exe

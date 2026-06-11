@@ -1,0 +1,5 @@
+{
+  "netlistType": "JLCEDA",
+  "maxChars": 500000,
+  "timeoutMs": 60000
+}
